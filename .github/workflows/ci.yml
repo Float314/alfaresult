@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    name: ${{ matrix.os }} / ${{ matrix.compiler }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: gcc
+            cmake-args: -DCMAKE_CXX_COMPILER=g++
+          - os: ubuntu-latest
+            compiler: clang
+            cmake-args: -DCMAKE_CXX_COMPILER=clang++
+          - os: windows-latest
+            compiler: msvc
+            cmake-args: -A x64
+          - os: macos-latest
+            compiler: clang
+            cmake-args: -DCMAKE_CXX_COMPILER=clang++
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -D ALFARESULT_BUILD_TESTS=ON ${{ matrix.cmake-args }}
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
